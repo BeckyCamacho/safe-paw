@@ -1,9 +1,7 @@
 import { collection, setDoc, doc, serverTimestamp, getDocs, deleteDoc } from "firebase/firestore";
 import { db } from "../lib/firebase";
 
-// ========================
-// 🔹 Normalizador de texto
-// ========================
+
 const norm = (s = "") =>
   s.toLowerCase()
     .normalize("NFD").replace(/\p{Diacritic}/gu, "")
@@ -11,9 +9,7 @@ const norm = (s = "") =>
 
 const slug = (s) => norm(s).replace(/[^a-z0-9]+/g, "-");
 
-// ========================
-// 🔹 Datos de ejemplo
-// ========================
+
 const demoCaregivers = [
   { name: "Paola Rojas", city: "Bogotá", services: ["Paseo", "Guardería diurna"], price_from: 30000, photoUrl: "https://images.unsplash.com/photo-1543852786-1cf6624b9987?q=80&w=800&auto=format", rating: 4.8, hours: { start: "08:00", end: "18:00" } },
   { name: "Carlos Mejía", city: "Medellín", services: ["Cuidado en casa", "Peluquería básica"], price_from: 40000, photoUrl: "https://images.unsplash.com/photo-1547425260-76bcadfb4f2c?q=80&w=800&auto=format", rating: 4.6, hours: { start: "09:00", end: "19:00" } },
@@ -22,9 +18,7 @@ const demoCaregivers = [
   { name: "Camila Díaz", city: "Bucaramanga", services: ["Cuidado en casa", "Paseo"], price_from: 28000, photoUrl: "https://images.unsplash.com/photo-1517423440428-a5a00ad493e8?q=80&w=800&auto=format", rating: 4.5, hours: { start: "08:00", end: "16:00" } },
 ];
 
-// ========================
-// 🔹 Sembrar cuidadores (sin duplicar)
-// ========================
+
 async function seedCaregivers() {
   for (const c of demoCaregivers) {
     const id = `${slug(c.name)}--${slug(c.city)}`;
@@ -33,9 +27,8 @@ async function seedCaregivers() {
   alert("Cuidadores demo actualizados ✅ (sin duplicar)");
 }
 
-// ========================
-// 🔹 Previsualizar duplicados
-// ========================
+
+
 async function previewDupes() {
   const snap = await getDocs(collection(db, "caregivers"));
   const groups = new Map();
@@ -49,9 +42,7 @@ async function previewDupes() {
   alert(`Encontrados ${dupes.reduce((n, arr) => n + (arr.length - 1), 0)} duplicados (ver consola).`);
 }
 
-// ========================
-// 🔹 Eliminar duplicados
-// ========================
+
 async function cleanupDuplicateCaregivers() {
   if (!confirm("¿Eliminar duplicados? (deja 1 por nombre+ciudad)")) return;
 
@@ -67,7 +58,7 @@ async function cleanupDuplicateCaregivers() {
   for (const docs of groups.values()) {
     if (docs.length <= 1) continue;
 
-    // Conserva el más antiguo por createdAt (o por id si no hay createdAt)
+   
     docs.sort((a, b) => {
       const ca = a.data().createdAt?.toMillis?.() || 0;
       const cb = b.data().createdAt?.toMillis?.() || 0;
@@ -82,9 +73,8 @@ async function cleanupDuplicateCaregivers() {
   alert(`Listo ✅ Eliminados ${removed} duplicados.`);
 }
 
-// ========================
-// 🔹 Componente principal
-// ========================
+
+
 export default function Home() {
   return (
     <section className="py-12 text-center">
