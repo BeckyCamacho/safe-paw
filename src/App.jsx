@@ -11,6 +11,8 @@ import CaregiverRequests from "./pages/CaregiverRequests.jsx";
 import { useCaregiverPendingCount } from "./hooks/useCaregiverPendingCount";
 import MyProfile from "./pages/MyProfile.jsx";
 
+import { Toaster } from "react-hot-toast"; // ✅ Import del sistema de notificaciones
+
 export default function App() {
   const { user, authLoading, signOut } = useAuth();
   const pending = useCaregiverPendingCount();
@@ -20,7 +22,9 @@ export default function App() {
     <div className="min-h-screen bg-white text-gray-900">
       <header className="border-b sticky top-0 bg-white/80 backdrop-blur">
         <div className="max-w-5xl mx-auto p-4 flex items-center justify-between">
-          <Link to="/" className="text-xl font-bold">Safe Paw</Link>
+          <Link to="/" className="text-xl font-bold">
+            Safe Paw
+          </Link>
           <nav className="text-sm flex gap-4 items-center relative">
             <Link to="/">Inicio</Link>
             <Link to="/caregivers">Cuidadores</Link>
@@ -37,7 +41,7 @@ export default function App() {
                   )}
                 </Link>
 
-                {/* ✅ Mi perfil (movido fuera del Link anterior) */}
+                {/* Mi perfil */}
                 <Link to="/profile" className="hover:underline">
                   Mi perfil
                 </Link>
@@ -52,7 +56,7 @@ export default function App() {
                   )}
                 </Link>
 
-                {/* Usuario y cerrar sesión */}
+                {/* Usuario y salir */}
                 <span className="text-gray-500 hidden sm:inline">
                   ({user.email})
                 </span>
@@ -90,6 +94,9 @@ export default function App() {
       <footer className="max-w-5xl mx-auto p-4 text-center text-xs text-gray-500">
         © {year} Safe Paw
       </footer>
+
+      {/* ✅ Toaster global: muestra notificaciones */}
+      <Toaster position="top-right" toastOptions={{ duration: 2500 }} />
     </div>
   );
 }

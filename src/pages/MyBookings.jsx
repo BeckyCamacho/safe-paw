@@ -1,60 +1,136 @@
-// imports...
-import { useEffect, useState } from "react";
-import { collection, onSnapshot, orderBy, query, updateDoc, doc, where } from "firebase/firestore";
-import { db } from "../lib/firebase";
-import { useAuth } from "../context/AuthProvider.jsx";
-import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
+import { collection, where, orderBy, query as q, updateDoc, doc } from "firebase/firestore";
+import { db } from "../firebase";
+import usePaginatedCollection from "../hooks/usePaginatedCollection";
+import { useMemo, useState } from "react";
+import toast from "react-hot-toast";
 
-export default function MyBookings() {   // ← export default aquí
-  const { user, authLoading } = useAuth();
-  const nav = useNavigate();
-  const [items, setItems] = useState([]);
+const STATUS = [
+  { key: "all", label: "Todas" },
+  { key: "accepted", label: "Aceptadas" },
+  { key: "rejected", label: "Rechazadas" },
+  { key: "cancelled", label: "Canceladas" },
+  { key: "new", label: "Pendientes" },
+];
 
-  useEffect(() => {
-    if (authLoading) return;
-    if (!user) { nav("/signin?redirect=/my-bookings"); return; }
-    const q = query(collection(db, "bookings"), where("userId", "==", user.uid), orderBy("createdAt", "desc"));
-    return onSnapshot(q, (snap) => setItems(snap.docs.map(d => ({ id: d.id, ...d.data() }))));
-  }, [user, authLoading, nav]);
+const chipClass = (s) =>
+  ({
+    accepted: "bg-green-100 text-green-700 border-green-300",
+    rejected: "bg-red-100 text-red-700 border-red-300",
+    cancelled: "bg-yellow-100 text-yellow-700 border-yellow-300",
+    new: "bg-blue-100 text-blue-700 border-blue-300",
+  }[s] || "bg-gray-100 text-gray-700 border-gray-300");
 
-  async function cancel(id) {
-    if (!confirm("¿Cancelar esta reserva?")) return;
-    await updateDoc(doc(db, "bookings", id), { status: "cancelled" });
+export default function MyBookings() {
+  const { user } = useAuth();
+  const [filter, setFilter] = useState("all");
+
+  const buildQuery = useMemo(
+    () => () => {
+      const base = [
+        where("userId", "==", user.uid),
+        orderBy("createdAt", "desc"),
+      ];
+      if (filter !== "all") base.unshift(where("status", "==", filter));
+      return q(collection(db, "bookings"), ...base);
+    },
+    [user?.uid, filter]
+  );
+
+  const { items, loading, hasMore, loadMore, error } = usePaginatedCollection({
+    buildQuery,
+    pageSize: 10,
+    deps: [user?.uid, filter],
+  });
+
+  // 🔹 Cancelar reserva con toast
+  async function handleCancel(id) {
+    const ref = doc(db, "bookings", id);
+    await updateDoc(ref, { status: "cancelled" });
+    toast("Reserva cancelada", { icon: "🗑️" });
   }
 
   return (
-    <section className="py-6">
-      <h2 className="text-xl font-semibold mb-4">Mis reservas</h2>
-      {items.length === 0 ? (
-        <p className="text-gray-600">
-          No tienes reservas. <Link to="/caregivers" className="underline">Buscar cuidadores</Link>
-        </p>
-      ) : (
-        <div className="grid gap-3">
-          {items.map(b => (
-            <article
-              key={b.id}
-              className="border rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between"
-            >
-              <div className="flex items-center gap-3">
-                
-                <div>
-                  <div className="font-medium">{b.caregiverName}</div>
-                  <div className="text-sm text-gray-600">{b.date} • {b.time} • {b.address}</div>
-                  <div className="text-xs mt-1">Estado: <b>{b.status}</b></div>
-                </div>
-              </div>
+    <div className="max-w-4xl mx-auto p-4">
+      <h1 className="text-2xl font-semibold mb-3">Mis reservas</h1>
 
-              {b.status === "new" && (
-                <div className="mt-2 sm:mt-0 flex gap-2">
-                  <button onClick={() => cancel(b.id)} className="border rounded-lg px-3 py-1">Cancelar</button>
-                </div>
+      {/* Filtros */}
+      <div className="flex flex-wrap gap-2 mb-4">
+        {STATUS.map(({ key, label }) => (
+          <button
+            key={key}
+            onClick={() => setFilter(key)}
+            className={`px-3 py-1 rounded-full border text-sm ${
+              filter === key
+                ? "bg-black text-white border-black"
+                : "bg-white text-gray-800 border-gray-300 hover:bg-gray-50"
+            }`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+
+      {/* Lista */}
+      <div className="space-y-3">
+        {items.map((bk) => (
+          <div key={bk.id} className="border rounded-xl p-4">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-700">
+                {bk.date} • {bk.time} • {bk.address}
+              </p>
+
+              <span
+                className={`px-2 py-1 rounded-full text-xs border ${chipClass(bk.status)}`}
+              >
+                {bk.status === "accepted"
+                  ? "Aceptada"
+                  : bk.status === "rejected"
+                  ? "Rechazada"
+                  : bk.status === "cancelled"
+                  ? "Cancelada"
+                  : "Pendiente"}
+              </span>
+
+              {bk.status === "accepted" && (
+                <button
+                  onClick={() => handleCancel(bk.id)}
+                  className="ml-3 px-3 py-1 text-sm rounded bg-yellow-500 text-white hover:bg-yellow-600"
+                >
+                  Cancelar
+                </button>
               )}
-            </article>
-          ))}
-        </div>
+            </div>
+          </div>
+        ))}
+
+        {!loading && items.length === 0 && (
+          <p className="text-gray-500 text-sm">
+            No hay reservas para este filtro.
+          </p>
+        )}
+      </div>
+
+      {/* Paginación */}
+      <div className="mt-4">
+        {hasMore ? (
+          <button
+            onClick={loadMore}
+            disabled={loading}
+            className="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50"
+          >
+            {loading ? "Cargando..." : "Cargar más"}
+          </button>
+        ) : (
+          items.length > 0 && (
+            <p className="text-gray-400 text-xs">No hay más resultados.</p>
+          )
+        )}
+      </div>
+
+      {error && (
+        <p className="text-red-600 text-sm mt-2">Error: {error.message}</p>
       )}
-    </section>
+    </div>
   );
 }
-
