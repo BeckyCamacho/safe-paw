@@ -16,6 +16,7 @@ const demoCaregivers = [
   { name: "Sara López", city: "Cali", services: ["Paseo", "Entrenamiento básico"], price_from: 35000, photoUrl: "https://images.unsplash.com/photo-1517849845537-4d257902454a?q=80&w=800&auto=format", rating: 4.9, hours: { start: "07:00", end: "17:00" } },
   { name: "Julián Pérez", city: "Barranquilla", services: ["Hospedaje nocturno"], price_from: 50000, photoUrl: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9?q=80&w=800&auto=format", rating: 4.7, hours: { start: "10:00", end: "20:00" } },
   { name: "Camila Díaz", city: "Bucaramanga", services: ["Cuidado en casa", "Paseo"], price_from: 28000, photoUrl: "https://images.unsplash.com/photo-1517423440428-a5a00ad493e8?q=80&w=800&auto=format", rating: 4.5, hours: { start: "08:00", end: "16:00" } },
+  
 ];
 
 

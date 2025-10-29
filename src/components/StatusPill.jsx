@@ -1,20 +1,20 @@
 // src/components/StatusPill.jsx
 export default function StatusPill({ value }) {
   const map = {
-    accepted: 'bg-green-100 text-green-800 border border-green-300',
-    rejected: 'bg-red-100 text-red-800 border border-red-300',
-    cancelled: 'bg-yellow-100 text-yellow-800 border border-yellow-300',
-    new: 'bg-blue-100 text-blue-800 border border-blue-300',
+    accepted: "bg-green-100 text-green-800",
+    rejected: "bg-red-100 text-red-800",
+    cancelled: "bg-gray-100 text-gray-800",
+    new: "bg-blue-100 text-blue-800",
   };
 
-  const cls = map[value] ?? 'bg-slate-100 text-slate-800 border border-slate-300';
+  const cls = map[value] ?? "bg-slate-100 text-slate-800";
 
-  // Traducimos los valores para mostrar en español
+  // Traducción de estados a español
   const labels = {
-    accepted: 'Aceptada',
-    rejected: 'Rechazada',
-    cancelled: 'Cancelada',
-    new: 'Nueva',
+    accepted: "Aceptada",
+    rejected: "Rechazada",
+    cancelled: "Cancelada",
+    new: "Nueva",
   };
 
   const label = labels[value] ?? value;

@@ -1,9 +1,11 @@
-import { useAuth } from "../hooks/useAuth";
+// src/pages/MyBookings.jsx
+import { useAuth } from "../context/AuthProvider.jsx"; // ✅ corregido
 import { collection, where, orderBy, query as q, updateDoc, doc } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../lib/firebase"; // ✅ corregido
 import usePaginatedCollection from "../hooks/usePaginatedCollection";
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import StatusPill from "../components/StatusPill";
 
 const STATUS = [
   { key: "all", label: "Todas" },
@@ -43,7 +45,6 @@ export default function MyBookings() {
     deps: [user?.uid, filter],
   });
 
-  // 🔹 Cancelar reserva con toast
   async function handleCancel(id) {
     const ref = doc(db, "bookings", id);
     await updateDoc(ref, { status: "cancelled" });
@@ -80,17 +81,7 @@ export default function MyBookings() {
                 {bk.date} • {bk.time} • {bk.address}
               </p>
 
-              <span
-                className={`px-2 py-1 rounded-full text-xs border ${chipClass(bk.status)}`}
-              >
-                {bk.status === "accepted"
-                  ? "Aceptada"
-                  : bk.status === "rejected"
-                  ? "Rechazada"
-                  : bk.status === "cancelled"
-                  ? "Cancelada"
-                  : "Pendiente"}
-              </span>
+              <StatusPill value={bk.status} />
 
               {bk.status === "accepted" && (
                 <button
@@ -134,3 +125,4 @@ export default function MyBookings() {
     </div>
   );
 }
+

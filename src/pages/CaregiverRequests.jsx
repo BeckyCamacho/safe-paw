@@ -1,9 +1,11 @@
-import { useAuth } from "../hooks/useAuth";
+// src/pages/CaregiverRequests.jsx
+import { useAuth } from "../context/AuthProvider.jsx";
 import { collection, where, orderBy, query as q, updateDoc, doc } from "firebase/firestore";
-import { db } from "../firebase";
+import { db } from "../lib/firebase";
 import usePaginatedCollection from "../hooks/usePaginatedCollection";
 import { useMemo, useState } from "react";
 import toast from "react-hot-toast";
+import StatusPill from "../components/StatusPill.jsx";
 
 const STATUS = [
   { key: "all", label: "Todas" },
@@ -12,14 +14,6 @@ const STATUS = [
   { key: "rejected", label: "Rechazadas" },
   { key: "cancelled", label: "Canceladas" },
 ];
-
-const chipClass = (s) =>
-  ({
-    accepted: "bg-green-100 text-green-700 border-green-300",
-    rejected: "bg-red-100 text-red-700 border-red-300",
-    cancelled: "bg-yellow-100 text-yellow-700 border-yellow-300",
-    new: "bg-blue-100 text-blue-700 border-blue-300",
-  }[s] || "bg-gray-100 text-gray-700 border-gray-300");
 
 export default function CaregiverRequests() {
   const { user } = useAuth();
@@ -43,11 +37,11 @@ export default function CaregiverRequests() {
     deps: [user?.uid, filter],
   });
 
-  // 🔹 Funciones para actualizar el estado con toast
+  // 🔹 Acciones con toast
   async function handleAccept(id) {
     const ref = doc(db, "bookings", id);
     await updateDoc(ref, { status: "accepted" });
-    toast.success("Solicitud aceptada ✅");
+    toast.success("Solicitud aceptada");
   }
 
   async function handleReject(id) {
@@ -91,31 +85,20 @@ export default function CaregiverRequests() {
                 </p>
               </div>
 
-              <span
-                className={`px-2 py-1 rounded-full text-xs border ${chipClass(bk.status)}`}
-              >
-                {bk.status === "accepted"
-                  ? "Aceptada"
-                  : bk.status === "rejected"
-                  ? "Rechazada"
-                  : bk.status === "cancelled"
-                  ? "Cancelada"
-                  : "Pendiente"}
-              </span>
+              <StatusPill value={bk.status} />
             </div>
 
-            {/* Botones de acción */}
             {bk.status === "new" && (
-              <div className="flex gap-2 mt-3">
+              <div className="mt-3 flex gap-2">
                 <button
                   onClick={() => handleAccept(bk.id)}
-                  className="px-3 py-1 text-sm rounded bg-green-600 text-white hover:bg-green-700"
+                  className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
                 >
                   Aceptar
                 </button>
                 <button
                   onClick={() => handleReject(bk.id)}
-                  className="px-3 py-1 text-sm rounded bg-red-600 text-white hover:bg-red-700"
+                  className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
                 >
                   Rechazar
                 </button>
@@ -125,9 +108,7 @@ export default function CaregiverRequests() {
         ))}
 
         {!loading && items.length === 0 && (
-          <p className="text-gray-500 text-sm">
-            No hay solicitudes para este filtro.
-          </p>
+          <p className="text-gray-500 text-sm">No hay solicitudes para este filtro.</p>
         )}
       </div>
 
@@ -148,9 +129,7 @@ export default function CaregiverRequests() {
         )}
       </div>
 
-      {error && (
-        <p className="text-red-600 text-sm mt-2">Error: {error.message}</p>
-      )}
+      {error && <p className="text-red-600 text-sm mt-2">Error: {error.message}</p>}
     </div>
   );
 }
