@@ -1,14 +1,18 @@
-// src/components/CaregiverRoute.jsx
+
 import { Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthProvider.jsx";
 
 export default function CaregiverRoute({ children }) {
-  const { user } = useAuth();
-  const isCaregiver = user?.isCaregiver;
+  const { authLoading, user, profile } = useAuth();
 
-  if (!isCaregiver) {
+
+  if (authLoading) return null;
+
+  
+  if (!user || !profile?.isCaregiver) {
     return <Navigate to="/" replace />;
   }
 
+  
   return children;
 }
