@@ -1,8 +1,7 @@
-// src/hooks/useCaregiverPendingCount.js
 import { useEffect, useState } from "react";
 import { collection, onSnapshot, query, where } from "firebase/firestore";
-import { db } from "../lib/firebase"; 
-import { useAuth } from "../context/AuthProvider.jsx";
+import { db } from "../lib/firebase"; // ✅ IMPORT CORRECTO
+import { useAuth } from "../context/AuthProvider.jsx"; // ✅ IMPORT CORRECTO
 
 export function useCaregiverPendingCount() {
   const { user } = useAuth();
@@ -17,6 +16,7 @@ export function useCaregiverPendingCount() {
       where("status", "in", ["new", "pending"])
     );
 
+    // Escucha los cambios en tiempo real
     return onSnapshot(q, (snap) => setCount(snap.size));
   }, [user?.uid]);
 

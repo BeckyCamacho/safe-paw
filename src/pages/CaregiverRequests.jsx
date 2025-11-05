@@ -1,135 +1,92 @@
-// src/pages/CaregiverRequests.jsx
-import { useAuth } from "../context/AuthProvider.jsx";
-import { collection, where, orderBy, query as q, updateDoc, doc } from "firebase/firestore";
-import { db } from "../lib/firebase";
-import usePaginatedCollection from "../hooks/usePaginatedCollection";
-import { useMemo, useState } from "react";
-import toast from "react-hot-toast";
-import StatusPill from "../components/StatusPill.jsx";
-
-const STATUS = [
-  { key: "all", label: "Todas" },
-  { key: "new", label: "Pendientes" },
-  { key: "accepted", label: "Aceptadas" },
-  { key: "rejected", label: "Rechazadas" },
-  { key: "cancelled", label: "Canceladas" },
-];
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { auth, db } from "../lib/firebase";
+import { collection, query, where, onSnapshot } from "firebase/firestore";
 
 export default function CaregiverRequests() {
-  const { user } = useAuth();
-  const [filter, setFilter] = useState("all");
+  const [services, setServices] = useState([]);
+  const user = auth.currentUser;
 
-  const buildQuery = useMemo(
-    () => () => {
-      const base = [
-        where("caregiverId", "==", user.uid),
-        orderBy("createdAt", "desc"),
-      ];
-      if (filter !== "all") base.unshift(where("status", "==", filter));
-      return q(collection(db, "bookings"), ...base);
-    },
-    [user?.uid, filter]
-  );
+  useEffect(() => {
+    if (!user) return;
 
-  const { items, loading, hasMore, loadMore, error } = usePaginatedCollection({
-    buildQuery,
-    pageSize: 10,
-    deps: [user?.uid, filter],
-  });
+    // Traer servicios del cuidador sin orderBy para evitar índices compuestos
+    const q = query(
+      collection(db, "services"),
+      where("caregiverId", "==", user.uid)
+    );
 
-  // 🔹 Acciones con toast
-  async function handleAccept(id) {
-    const ref = doc(db, "bookings", id);
-    await updateDoc(ref, { status: "accepted" });
-    toast.success("Solicitud aceptada");
-  }
+    const off = onSnapshot(q, (snap) => {
+      const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
+      // Ordena en cliente por fecha si existe
+      rows.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
+      setServices(rows);
+    });
 
-  async function handleReject(id) {
-    const ref = doc(db, "bookings", id);
-    await updateDoc(ref, { status: "rejected" });
-    toast("Solicitud rechazada", { icon: "🟥" });
-  }
+    return () => off();
+  }, [user]);
 
   return (
-    <div className="max-w-4xl mx-auto p-4">
-      <h1 className="text-2xl font-semibold mb-3">Solicitudes</h1>
+    <div className="max-w-3xl mx-auto">
+      <h1 className="text-3xl font-bold text-center">
+        ¡Hola cuidador/a! <span className="ml-2">🐾</span>
+      </h1>
 
-      {/* Filtros */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        {STATUS.map(({ key, label }) => (
-          <button
-            key={key}
-            onClick={() => setFilter(key)}
-            className={`px-3 py-1 rounded-full border text-sm ${
-              filter === key
-                ? "bg-black text-white border-black"
-                : "bg-white text-gray-800 border-gray-300 hover:bg-gray-50"
-            }`}
-          >
-            {label}
-          </button>
-        ))}
+      <p className="text-center mt-2 text-gray-700">
+        Bienvenido/a a Safe Paw
+      </p>
+
+      {/* Acciones */}
+      <div className="flex justify-center gap-3 mt-6">
+        <Link
+          to="/caregiver/services/new"
+          className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
+        >
+          + Agregar servicio
+        </Link>
+        <Link
+          to="/profile"
+          className="px-4 py-2 rounded-lg border hover:bg-gray-50"
+        >
+          Editar perfil
+        </Link>
       </div>
 
-      {/* Lista */}
-      <div className="space-y-3">
-        {items.map((bk) => (
-          <div key={bk.id} className="border rounded-xl p-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-700">
-                  {bk.petName} • {bk.userEmail}
-                </p>
-                <p className="text-xs text-gray-500">
-                  {bk.date} • {bk.time} • {bk.address}
-                </p>
-              </div>
+      {/* Listado de servicios */}
+      <div className="mt-8 bg-white rounded-2xl shadow p-4">
+        <h2 className="text-lg font-semibold mb-3">Servicios disponibles</h2>
 
-              <StatusPill value={bk.status} />
-            </div>
-
-            {bk.status === "new" && (
-              <div className="mt-3 flex gap-2">
-                <button
-                  onClick={() => handleAccept(bk.id)}
-                  className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                >
-                  Aceptar
-                </button>
-                <button
-                  onClick={() => handleReject(bk.id)}
-                  className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-                >
-                  Rechazar
-                </button>
-              </div>
-            )}
-          </div>
-        ))}
-
-        {!loading && items.length === 0 && (
-          <p className="text-gray-500 text-sm">No hay solicitudes para este filtro.</p>
-        )}
-      </div>
-
-      {/* Paginación */}
-      <div className="mt-4">
-        {hasMore ? (
-          <button
-            onClick={loadMore}
-            disabled={loading}
-            className="px-4 py-2 border rounded-lg hover:bg-gray-50 disabled:opacity-50"
-          >
-            {loading ? "Cargando..." : "Cargar más"}
-          </button>
+        {services.length === 0 ? (
+          <p className="text-gray-500">No hay servicios registrados aún.</p>
         ) : (
-          items.length > 0 && (
-            <p className="text-gray-400 text-xs">No hay más resultados.</p>
-          )
+          <ul className="divide-y">
+            {services.map((s) => (
+              <li key={s.id} className="py-3 flex items-center justify-between">
+                <div>
+                  <div className="font-medium">
+                    {s.type} · {s.city}
+                  </div>
+                  <div className="text-sm text-gray-500">{s.description}</div>
+                </div>
+                <div className="text-right">
+                  <div className="font-semibold">
+                    {typeof s.price === "number"
+                      ? s.price.toLocaleString("es-CO", {
+                          style: "currency",
+                          currency: "COP",
+                          maximumFractionDigits: 0,
+                        })
+                      : s.price}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    {s.isActive ? "Activo" : "Inactivo"}
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </div>
-
-      {error && <p className="text-red-600 text-sm mt-2">Error: {error.message}</p>}
     </div>
   );
 }

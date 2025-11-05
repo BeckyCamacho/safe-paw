@@ -1,60 +1,55 @@
-// src/context/AuthProvider.jsx
 import { createContext, useContext, useEffect, useState } from "react";
-import { onAuthStateChanged, signOut as fbSignOut } from "firebase/auth";
-import { auth, db } from "../lib/firebase";
-import { doc, getDoc } from "firebase/firestore";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { auth, db } from "../lib/firebase";           // ← tu inicialización
+import { doc, getDoc, setDoc } from "firebase/firestore";
 
-const AuthCtx = createContext(null);
+const AuthContext = createContext(null);
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(null);      // usuario de Firebase
-  const [profile, setProfile] = useState(null); // perfil Firestore (roles, etc.)
-  const [authLoading, setAuthLoading] = useState(true);
+  const [user, setUser] = useState(null);
+  const [status, setStatus] = useState("loading"); // loading | ready
 
   useEffect(() => {
-    const unsub = onAuthStateChanged(auth, async (u) => {
-      if (u) {
-        setUser(u);
-
-        try {
-          // 🔹 Buscar perfil en Firestore
-          const ref = doc(db, "users", u.uid);
-          const snap = await getDoc(ref);
-          if (snap.exists()) {
-            setProfile(snap.data());
-          } else {
-            // Si no existe, crear perfil básico temporal
-            setProfile({
-              email: u.email,
-              isCaregiver: false, // por defecto no es cuidador
-              name: u.displayName || "",
-            });
-          }
-        } catch (err) {
-          console.error("Error cargando perfil:", err);
-          setProfile({ email: u.email, isCaregiver: false });
-        }
-      } else {
+    const unsub = onAuthStateChanged(auth, async (fbUser) => {
+      if (!fbUser) {
         setUser(null);
-        setProfile(null);
+        setStatus("ready");
+        return;
       }
-      setAuthLoading(false);
+
+      // Perfil básico en Firestore (opcional)
+      const ref = doc(db, "users", fbUser.uid);
+      const snap = await getDoc(ref);
+      const profile = snap.exists()
+        ? snap.data()
+        : {
+            email: fbUser.email ?? "",
+            displayName: fbUser.displayName ?? "",
+            role: "user",
+          };
+
+      if (!snap.exists()) await setDoc(ref, profile, { merge: true });
+
+      setUser({ uid: fbUser.uid, ...profile });
+      setStatus("ready");
     });
 
     return () => unsub();
   }, []);
 
-  async function signOut() {
-    await fbSignOut(auth);
-  }
+  const value = {
+    user,
+    status,
+    logout: () => signOut(auth),
+  };
 
-  return (
-    <AuthCtx.Provider value={{ user, profile, authLoading, signOut }}>
-      {children}
-    </AuthCtx.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  return useContext(AuthCtx);
+  const ctx = useContext(AuthContext);
+  if (!ctx) {
+    throw new Error("useAuth must be used within <AuthProvider>");
+  }
+  return ctx;
 }
