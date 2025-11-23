@@ -190,8 +190,8 @@ export default function BookingForm() {
               onChange={handleChange("petType")}
               required
             >
-              <option value="perro">🐕 Perro</option>
-              <option value="gato">🐱 Gato</option>
+              <option value="perro">Perro</option>
+              <option value="gato">Gato</option>
             </select>
           </label>
 

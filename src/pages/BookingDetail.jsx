@@ -301,18 +301,28 @@ export default function BookingDetail() {
           <button
             onClick={handleAccept}
             disabled={updating}
-            className="flex-1 px-6 py-3 rounded-full bg-green-500 text-white hover:bg-green-600 disabled:opacity-60 transition-colors font-medium text-base shadow-md"
+            className="flex-1 px-6 py-3 rounded-full border-2 disabled:opacity-60 transition-colors font-medium text-base shadow-md"
+            style={{
+              backgroundColor: '#E4F0FF',
+              color: '#3B82F6',
+              borderColor: '#3B82F6'
+            }}
           >
-            {updating ? "Actualizando…" : "Aceptar solicitud"}
+            {updating ? "Actualizando…" : " Aceptar solicitud"}
           </button>
 
 
             <button
               onClick={handleDecline}
               disabled={updating}
-              className="flex-1 px-6 py-3 rounded-full bg-red-500 text-white hover:bg-red-600 disabled:opacity-60 transition-colors font-medium text-base shadow-md"
+              className="flex-1 px-6 py-3 rounded-full border-2 disabled:opacity-60 transition-colors font-medium text-base shadow-md"
+              style={{
+                backgroundColor: '#FFE5E5',
+                color: '#EF4444',
+                borderColor: '#EF4444'
+              }}
             >
-               Rechazar solicitud
+              Rechazar solicitud
             </button>
           </div>
         </div>

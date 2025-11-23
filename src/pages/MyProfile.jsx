@@ -344,14 +344,14 @@ export default function MyProfile() {
             {/* Avatar */}
             <div className="relative">
               <div className="w-32 h-32 rounded-full bg-white border-4 border-white shadow-lg flex items-center justify-center overflow-hidden">
-                {user.photoURL && !photoError ? (
+                {(isCaregiver && caregiverData?.avatarUrl) || (user.photoURL && !photoError) ? (
                   <img
-                    src={user.photoURL}
+                    src={isCaregiver && caregiverData?.avatarUrl ? caregiverData.avatarUrl : user.photoURL}
                     alt={user.displayName || "Usuario"}
                     className="w-full h-full object-cover"
                     onError={() => {
                       // Si la imagen falla al cargar, mostrar iniciales
-                      console.warn("Error cargando foto de perfil de Google:", user.photoURL);
+                      console.warn("Error cargando foto de perfil:", isCaregiver && caregiverData?.avatarUrl ? caregiverData.avatarUrl : user.photoURL);
                       setPhotoError(true);
                     }}
                     onLoad={() => {

@@ -127,16 +127,26 @@ export default function CaregiverRequests() {
                   <button
                     onClick={() => handleUpdateStatus(b.id, "ACCEPTED")}
                     disabled={updatingId === b.id}
-                    className="px-4 py-2 rounded-full bg-green-500 text-white text-sm hover:bg-green-600 disabled:opacity-60 transition-colors font-medium shadow-md"
+                    className="px-4 py-2 rounded-full text-sm border-2 disabled:opacity-60 transition-colors font-medium shadow-md"
+                    style={{
+                      backgroundColor: updatingId === b.id ? '#E4F0FF' : '#E4F0FF',
+                      color: '#3B82F6',
+                      borderColor: '#3B82F6'
+                    }}
                   >
-                    {updatingId === b.id ? "Actualizando..." : "Aceptar"}
+                    {updatingId === b.id ? "Actualizando..." : " Aceptar"}
                   </button>
 
                 
                 <button
                   onClick={() => handleUpdateStatus(b.id, "DECLINED")}
                   disabled={updatingId === b.id}
-                  className="px-4 py-2 rounded-full bg-red-500 text-white text-sm hover:bg-red-600 disabled:opacity-60 transition-colors font-medium shadow-md"
+                  className="px-4 py-2 rounded-full text-sm border-2 disabled:opacity-60 transition-colors font-medium shadow-md"
+                  style={{
+                    backgroundColor: '#FFE5E5',
+                    color: '#EF4444',
+                    borderColor: '#EF4444'
+                  }}
                 >
                   Rechazar
                 </button>
