@@ -5,10 +5,23 @@ import crypto from "crypto";
  * POST /api/cloudinary/sign
  */
 export default async function handler(req, res) {
+  // Manejar preflight CORS
+  if (req.method === "OPTIONS") {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    return res.status(200).end();
+  }
+
   // Solo permitir POST
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Método no permitido" });
   }
+
+  // Headers CORS
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
 
   try {
     const { timestamp } = req.body;

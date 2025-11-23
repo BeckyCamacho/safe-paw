@@ -14,6 +14,9 @@ export async function uploadToCloudinary(file) {
   const apiBase = import.meta.env.PROD
     ? "" // En producción, las rutas /api están en el mismo dominio
     : import.meta.env.VITE_API_BASE || "http://localhost:4000/api";
+  
+  // Construir la URL completa
+  const signUrl = apiBase ? `${apiBase}/cloudinary/sign` : `/api/cloudinary/sign`;
 
   // Obtener firma del backend
   const timestamp = Math.floor(Date.now() / 1000);
@@ -24,13 +27,13 @@ export async function uploadToCloudinary(file) {
   
   for (let attempt = 1; attempt <= maxRetries; attempt++) {
     try {
-      console.log(`Intentando conectar con: ${apiBase}/cloudinary/sign (intento ${attempt}/${maxRetries})`);
+      console.log(`Intentando conectar con: ${signUrl} (intento ${attempt}/${maxRetries})`);
       
       // Crear un AbortController para timeout
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos
       
-      signResponse = await fetch(`${apiBase}/cloudinary/sign`, {
+      signResponse = await fetch(signUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ timestamp }),
@@ -63,7 +66,7 @@ export async function uploadToCloudinary(file) {
       
       // Si es el último intento, lanzar el error
       if (attempt === maxRetries) {
-        console.error("URL intentada:", `${apiBase}/cloudinary/sign`);
+        console.error("URL intentada:", signUrl);
         throw new Error(
           `No se pudo conectar con el servidor después de ${maxRetries} intentos. ` +
           `Asegúrate de que el servidor backend esté corriendo en ${apiBase}. ` +
