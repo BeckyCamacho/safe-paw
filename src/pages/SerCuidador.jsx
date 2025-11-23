@@ -492,7 +492,7 @@ export default function SerCuidador() {
           <button
             type="submit"
             disabled={saving || uploading}
-            className="px-6 py-3 rounded-full bg-primary-DEFAULT text-white hover:bg-primary-DEFAULT/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
+            className="px-6 py-3 rounded-full bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
           >
             {saving ? (
               <>

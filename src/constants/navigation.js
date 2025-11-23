@@ -46,7 +46,7 @@ export const SERVICE_LABELS = {
 export const SERVICE_OPTIONS = [
   { value: "hospedaje", label: "Hospedaje nocturno" },
   { value: "guarderia", label: "Guardería diurna" },
-  { value: "paseos", label: "Paseos" },
+  { value: "paseos 30 minutos", label: "Paseos 30 minutos" },
   { value: "visitas", label: "Visitas a domicilio" },
   { value: "cuidado_casa_dueno", label: "Cuidado en casa del dueño" },
 ];

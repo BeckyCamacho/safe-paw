@@ -303,7 +303,7 @@ export default function BookingDetail() {
             disabled={updating}
             className="flex-1 px-6 py-3 rounded-full bg-green-500 text-white hover:bg-green-600 disabled:opacity-60 transition-colors font-medium text-base shadow-md"
           >
-            {updating ? "Actualizando…" : "✅ Aceptar solicitud"}
+            {updating ? "Actualizando…" : "Aceptar solicitud"}
           </button>
 
 
@@ -312,7 +312,7 @@ export default function BookingDetail() {
               disabled={updating}
               className="flex-1 px-6 py-3 rounded-full bg-red-500 text-white hover:bg-red-600 disabled:opacity-60 transition-colors font-medium text-base shadow-md"
             >
-              ❌ Rechazar solicitud
+               Rechazar solicitud
             </button>
           </div>
         </div>

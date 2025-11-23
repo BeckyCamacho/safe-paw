@@ -141,12 +141,21 @@ export default function CaregiverDetail() {
             </div>
 
             {/* Botón de reserva */}
-            <button
-              onClick={handleReserve}
-              className="px-8 py-3 rounded-full bg-primary-DEFAULT text-white hover:bg-primary-DEFAULT/90 transition-colors font-medium text-base"
-            >
-              Reservar ahora
-            </button>
+            
+        <button
+          onClick={handleReserve}
+          className="px-8 py-3 rounded-full bg-white text-primary-DEFAULT border border-primary-DEFAULT 
+                    hover:bg-primary-DEFAULT hover:text-slate-900 transition-colors font-medium text-base shadow-sm"
+        >
+          Reservar ahora
+        </button>
+
+
+
+
+
+
+
           </div>
         </div>
       </div>

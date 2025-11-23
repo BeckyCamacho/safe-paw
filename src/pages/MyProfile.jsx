@@ -398,12 +398,16 @@ export default function MyProfile() {
             {/* Botón de acción */}
             <div className="pt-4 w-full md:w-auto">
               {isCaregiver ? (
-                <button
-                  onClick={() => setEditing(!editing)}
-                  className="w-full md:w-auto px-6 py-3 rounded-full bg-primary-DEFAULT text-white hover:bg-primary-DEFAULT/90 active:bg-primary-DEFAULT/80 transition-colors font-medium shadow-lg hover:shadow-xl transform hover:scale-105 transition-all"
-                >
-                  {editing ? "Cancelar edición" : "Editar perfil"}
-                </button>
+
+            <button
+              onClick={() => setEditing(!editing)}
+              className="w-full md:w-auto px-6 py-3 rounded-full bg-[#D7B8FF] text-slate-900 hover:bg-[#B89CF2] active:bg-[#AA84E6] transition-colors font-medium shadow-lg hover:shadow-xl transform hover:scale-105"
+            >
+              {editing ? "Cancelar edición" : "Editar perfil"}
+            </button>
+
+           
+
               ) : (
                 <button
                   onClick={() => navigate(ROUTES.BECOME_CAREGIVER)}
@@ -494,15 +498,18 @@ export default function MyProfile() {
                 </svg>
                 Perfil de cuidador
               </h2>
-              <button
-                onClick={() => setEditing(true)}
-                className="px-4 py-2 rounded-lg bg-primary-DEFAULT text-white hover:bg-primary-DEFAULT/90 active:bg-primary-DEFAULT/80 transition-colors font-medium text-sm shadow-md hover:shadow-lg flex items-center gap-2"
-              >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                </svg>
-                Editar
-              </button>
+          
+           <button
+            onClick={() => setEditing(true)}
+            className="px-4 py-2 rounded-lg bg-[#D7B8FF] text-slate-900 hover:bg-[#C7A0FF] active:bg-[#B48CFF] transition-colors font-medium text-sm shadow-md hover:shadow-lg flex items-center gap-2"
+          >
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+            </svg>
+            Editar
+          </button>
+
+
             </div>
             <div className="space-y-3">
               {caregiverData.bio && (
@@ -695,7 +702,7 @@ export default function MyProfile() {
                 <button
                   type="submit"
                   disabled={saving || uploading}
-                  className="px-6 py-3 rounded-full bg-primary-DEFAULT text-white hover:bg-primary-DEFAULT/90 disabled:opacity-60 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
+                  className="px-6 py-3 rounded-full bg-blue-500 text-white hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed transition-colors font-medium flex items-center gap-2"
                 >
                   {saving ? (
                     <>

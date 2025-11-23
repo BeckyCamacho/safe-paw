@@ -129,7 +129,7 @@ export default function CaregiverRequests() {
                     disabled={updatingId === b.id}
                     className="px-4 py-2 rounded-full bg-green-500 text-white text-sm hover:bg-green-600 disabled:opacity-60 transition-colors font-medium shadow-md"
                   >
-                    {updatingId === b.id ? "Actualizando..." : "✅ Aceptar"}
+                    {updatingId === b.id ? "Actualizando..." : "Aceptar"}
                   </button>
 
                 
@@ -138,7 +138,7 @@ export default function CaregiverRequests() {
                   disabled={updatingId === b.id}
                   className="px-4 py-2 rounded-full bg-red-500 text-white text-sm hover:bg-red-600 disabled:opacity-60 transition-colors font-medium shadow-md"
                 >
-                  ❌ Rechazar
+                  Rechazar
                 </button>
               </div>
             )}
