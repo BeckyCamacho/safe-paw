@@ -1,92 +1,173 @@
 import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthProvider.jsx";
+import { updateBookingStatus, getBookingsByCaregiver } from "../services/bookings";
 import { Link } from "react-router-dom";
-import { auth, db } from "../lib/firebase";
-import { collection, query, where, onSnapshot } from "firebase/firestore";
 
 export default function CaregiverRequests() {
-  const [services, setServices] = useState([]);
-  const user = auth.currentUser;
+  const { user } = useAuth();
+  const [items, setItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [updatingId, setUpdatingId] = useState(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-    // Traer servicios del cuidador sin orderBy para evitar índices compuestos
-    const q = query(
-      collection(db, "services"),
-      where("caregiverId", "==", user.uid)
-    );
+    const loadBookings = async () => {
+      try {
+        const bookings = await getBookingsByCaregiver(user.uid);
+        setItems(bookings);
+      } catch (err) {
+        console.error("Error cargando solicitudes:", err);
+        alert("Error al cargar tus solicitudes.");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    const off = onSnapshot(q, (snap) => {
-      const rows = snap.docs.map((d) => ({ id: d.id, ...d.data() }));
-      // Ordena en cliente por fecha si existe
-      rows.sort((a, b) => (b.createdAt?.seconds ?? 0) - (a.createdAt?.seconds ?? 0));
-      setServices(rows);
-    });
-
-    return () => off();
+    loadBookings();
   }, [user]);
 
+  if (!user) {
+    return (
+      <p className="p-4">Inicia sesión para ver tus solicitudes como cuidador.</p>
+    );
+  }
+
+  if (loading) {
+    return <p className="p-4">Cargando solicitudes…</p>;
+  }
+
+  const pending = items.filter((b) => b.status === "REQUESTED");
+  const accepted = items.filter((b) => b.status === "ACCEPTED");
+  const cancelled = items.filter(
+    (b) => b.status === "CANCELLED" || b.status === "DECLINED"
+  );
+
+  const handleUpdateStatus = async (id, status) => {
+    const confirmMsg =
+      status === "ACCEPTED"
+        ? "¿Aceptar esta solicitud?"
+        : "¿Rechazar esta solicitud?";
+    const ok = window.confirm(confirmMsg);
+    if (!ok) return;
+
+    try {
+      setUpdatingId(id);
+      await updateBookingStatus(id, status);
+      setItems((prev) =>
+        prev.map((b) =>
+          b.id === id
+            ? {
+                ...b,
+                status,
+              }
+            : b
+        )
+      );
+    } catch (e) {
+      console.error(e);
+      alert("No se pudo actualizar la solicitud.");
+    } finally {
+      setUpdatingId(null);
+    }
+  };
+
+  const renderList = (list, options = {}) => {
+    const { showActions = false } = options;
+
+    if (list.length === 0) {
+      return (
+        <p className="text-xs text-gray-500">
+          No tienes solicitudes en esta sección.
+        </p>
+      );
+    }
+
+    return (
+      <ul className="space-y-3">
+        {list.map((b) => (
+          <li
+            key={b.id}
+            className="border rounded px-3 py-2 flex justify-between items-start gap-3"
+          >
+            <div className="text-sm">
+              <p className="font-medium">
+                {b.petName || "Mascota sin nombre"}
+              </p>
+              <p className="text-xs text-gray-600">
+                {b.startDate || "¿?"} → {b.endDate || "¿?"}
+              </p>
+              <p className="text-xs text-gray-600">
+                Servicio: {b.service || "No especificado"}
+              </p>
+              {b.address && (
+                <p className="text-xs text-gray-600">
+                  Dirección: {b.address}
+                </p>
+              )}
+              {b.notes && (
+                <p className="text-xs text-gray-600 mt-1">
+                  Notas: {b.notes}
+                </p>
+              )}
+              <Link
+                to={`/reserva/${b.id}`}
+                className="mt-1 inline-block text-xs text-primary-DEFAULT underline hover:text-primary-DEFAULT/80"
+              >
+                Ver detalle
+              </Link>
+            </div>
+
+            {showActions && (
+              <div className="flex flex-col gap-2 min-w-[120px]">
+
+                  <button
+                    onClick={() => handleUpdateStatus(b.id, "ACCEPTED")}
+                    disabled={updatingId === b.id}
+                    className="px-4 py-2 rounded-full bg-green-500 text-white text-sm hover:bg-green-600 disabled:opacity-60 transition-colors font-medium shadow-md"
+                  >
+                    {updatingId === b.id ? "Actualizando..." : "✅ Aceptar"}
+                  </button>
+
+                
+                <button
+                  onClick={() => handleUpdateStatus(b.id, "DECLINED")}
+                  disabled={updatingId === b.id}
+                  className="px-4 py-2 rounded-full bg-red-500 text-white text-sm hover:bg-red-600 disabled:opacity-60 transition-colors font-medium shadow-md"
+                >
+                  ❌ Rechazar
+                </button>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
+    );
+  };
+
   return (
-    <div className="max-w-3xl mx-auto">
-      <h1 className="text-3xl font-bold text-center">
-        ¡Hola cuidador/a! <span className="ml-2">🐾</span>
-      </h1>
+    <div className="container mx-auto max-w-3xl px-4 py-8">
+      <h1 className="text-2xl font-bold mb-4">Solicitudes de cuidado</h1>
 
-      <p className="text-center mt-2 text-gray-700">
-        Bienvenido/a a Safe Paw
-      </p>
+      <section className="mb-6">
+        <h2 className="text-sm font-semibold mb-2">Pendientes</h2>
+        {renderList(pending, { showActions: true })}
+      </section>
 
-      {/* Acciones */}
-      <div className="flex justify-center gap-3 mt-6">
-        <Link
-          to="/caregiver/services/new"
-          className="px-4 py-2 rounded-lg bg-indigo-600 text-white hover:bg-indigo-700"
-        >
-          + Agregar servicio
-        </Link>
-        <Link
-          to="/profile"
-          className="px-4 py-2 rounded-lg border hover:bg-gray-50"
-        >
-          Editar perfil
-        </Link>
-      </div>
+      <section className="mb-6">
+        <h2 className="text-sm font-semibold mb-2">Aceptadas</h2>
+        {renderList(accepted)}
+      </section>
 
-      {/* Listado de servicios */}
-      <div className="mt-8 bg-white rounded-2xl shadow p-4">
-        <h2 className="text-lg font-semibold mb-3">Servicios disponibles</h2>
-
-        {services.length === 0 ? (
-          <p className="text-gray-500">No hay servicios registrados aún.</p>
-        ) : (
-          <ul className="divide-y">
-            {services.map((s) => (
-              <li key={s.id} className="py-3 flex items-center justify-between">
-                <div>
-                  <div className="font-medium">
-                    {s.type} · {s.city}
-                  </div>
-                  <div className="text-sm text-gray-500">{s.description}</div>
-                </div>
-                <div className="text-right">
-                  <div className="font-semibold">
-                    {typeof s.price === "number"
-                      ? s.price.toLocaleString("es-CO", {
-                          style: "currency",
-                          currency: "COP",
-                          maximumFractionDigits: 0,
-                        })
-                      : s.price}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    {s.isActive ? "Activo" : "Inactivo"}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+      <section>
+        <h2 className="text-sm font-semibold mb-2">
+          Canceladas / Rechazadas
+        </h2>
+        {renderList(cancelled)}
+      </section>
     </div>
   );
 }
