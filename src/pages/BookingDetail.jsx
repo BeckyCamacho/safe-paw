@@ -185,8 +185,8 @@ export default function BookingDetail() {
             <div>
               <span className="text-sm font-medium text-gray-600">Tipo de animal:</span>
               <p className="text-gray-900 font-semibold flex items-center gap-2">
-                {booking.petType === "perro" && "🐕 Perro"}
-                {booking.petType === "gato" && "🐱 Gato"}
+                {booking.petType === "perro" && "Perro"}
+                {booking.petType === "gato" && " Gato"}
                 {!["perro", "gato"].includes(booking.petType) && booking.petType}
               </p>
             </div>
