@@ -1,5 +1,5 @@
 import { useParams, useNavigate, useLocation } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useAuth } from "../context/AuthProvider.jsx";
 import Uploader from "../components/Uploader.jsx";
 import { createBooking } from "../services/bookings";
@@ -16,6 +16,8 @@ export default function BookingForm() {
   const [photoUrl, setPhotoUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [dateError, setDateError] = useState("");
+  const [availableServices, setAvailableServices] = useState([]);
+  const [loadingCaregiver, setLoadingCaregiver] = useState(true);
 
   // Obtener la fecha mínima (hoy) en formato YYYY-MM-DD
   const getTodayString = () => {
@@ -24,8 +26,57 @@ export default function BookingForm() {
     return today.toISOString().split("T")[0];
   };
 
+  // Cargar servicios del cuidador
+  useEffect(() => {
+    const loadCaregiverServices = async () => {
+      try {
+        const caregiverRef = doc(db, "caregivers", caregiverId);
+        const caregiverSnap = await getDoc(caregiverRef);
+        
+        if (caregiverSnap.exists()) {
+          const caregiver = caregiverSnap.data();
+          const caregiverServices = Array.isArray(caregiver.services) ? caregiver.services : [];
+          
+          // Filtrar SERVICE_OPTIONS para mostrar solo los servicios que el cuidador ofrece
+          const filtered = SERVICE_OPTIONS.filter(option => 
+            caregiverServices.includes(option.value)
+          );
+          
+          setAvailableServices(filtered);
+          
+          // Si hay servicios disponibles, actualizar el servicio seleccionado
+          if (filtered.length > 0) {
+            setForm(prev => {
+              // Solo actualizar si no hay servicio seleccionado
+              if (!prev.service) {
+                return {
+                  ...prev,
+                  service: filtered[0].value
+                };
+              }
+              return prev;
+            });
+          }
+        } else {
+          // Si no existe el cuidador, mostrar todos los servicios como fallback
+          setAvailableServices(SERVICE_OPTIONS);
+        }
+      } catch (error) {
+        console.error("Error cargando servicios del cuidador:", error);
+        // En caso de error, mostrar todos los servicios como fallback
+        setAvailableServices(SERVICE_OPTIONS);
+      } finally {
+        setLoadingCaregiver(false);
+      }
+    };
+
+    if (caregiverId) {
+      loadCaregiverServices();
+    }
+  }, [caregiverId]);
+
   const [form, setForm] = useState({
-    service: SERVICE_OPTIONS[0]?.value || "hospedaje",
+    service: "",
     startDate: "",
     startTime: "",
     endDate: "",
@@ -73,6 +124,10 @@ export default function BookingForm() {
     if (!user) {
       const redirect = encodeURIComponent(location.pathname + location.search);
       return navigate(`/iniciar-sesion?redirect=${redirect}`);
+    }
+
+    if (!form.service) {
+      return alert("Por favor selecciona un servicio.");
     }
 
     if (!form.startDate || !form.endDate || !form.address || !form.petName) {
@@ -151,13 +206,11 @@ export default function BookingForm() {
       const d2 = new Date(form.endDate);
       const days = Math.max(1, Math.ceil((d2 - d1) / (1000 * 60 * 60 * 24)));
 
-      // Para servicios como paseos o visitas, el precio puede ser por sesión, no por día
-      // Por ahora, multiplicamos por días para todos los servicios
-      // En el futuro se puede ajustar la lógica según el tipo de servicio
+     
       const totalCOP = basePriceCOP * days;
       const priceInCents = totalCOP * 100;
 
-      // Crear reserva usando el servicio
+      
       const bookingId = await createBooking({
         caregiverId,
         ownerId: user.uid,
@@ -176,6 +229,34 @@ export default function BookingForm() {
     }
   };
 
+  if (loadingCaregiver) {
+    return (
+      <div className="container mx-auto max-w-2xl px-4 py-8">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="text-center">
+            <svg className="animate-spin h-8 w-8 mx-auto text-primary-DEFAULT" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            <p className="mt-4 text-gray-600">Cargando servicios disponibles...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (availableServices.length === 0) {
+    return (
+      <div className="container mx-auto max-w-2xl px-4 py-8">
+        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 text-center">
+          <p className="text-yellow-800 font-medium">
+            Este cuidador no tiene servicios disponibles en este momento.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8">
       <h1 className="text-2xl font-bold mb-4">Reservar cuidador</h1>
@@ -185,13 +266,14 @@ export default function BookingForm() {
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <label className="block">
-          <span className="block text-sm font-medium">Servicio</span>
+          <span className="block text-sm font-medium">Servicio <span className="text-red-500">*</span></span>
           <select
             className="mt-1 w-full border rounded px-3 py-2"
-            value={form.service}
+            value={form.service || availableServices[0]?.value || ""}
             onChange={handleChange("service")}
+            required
           >
-            {SERVICE_OPTIONS.map((option) => (
+            {availableServices.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
               </option>
