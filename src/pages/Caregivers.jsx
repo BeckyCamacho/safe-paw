@@ -174,7 +174,7 @@ export default function Caregivers() {
         </div>
 
         {/* Columna derecha - Ilustración */}
-        <div className="hidden lg:block relative h-[600px] px-6 lg:px-8 xl:px-12 pt-16">
+        <div className="hidden lg:block sticky top-0 h-[600px] px-6 lg:px-8 xl:px-12 pt-16">
           <CaregiverIllustration />
         </div>
       </div>
