@@ -15,6 +15,14 @@ export default function BookingForm() {
 
   const [photoUrl, setPhotoUrl] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [dateError, setDateError] = useState("");
+
+  // Obtener la fecha mínima (hoy) en formato YYYY-MM-DD
+  const getTodayString = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    return today.toISOString().split("T")[0];
+  };
 
   const [form, setForm] = useState({
     service: SERVICE_OPTIONS[0]?.value || "hospedaje",
@@ -35,7 +43,28 @@ export default function BookingForm() {
   const handleChange = (field) => (e) => {
     const value =
       e.target.type === "checkbox" ? e.target.checked : e.target.value;
-    setForm((prev) => ({ ...prev, [field]: value }));
+    
+    setForm((prev) => {
+      const updated = { ...prev, [field]: value };
+      
+      // Validar fechas cuando cambian
+      if (field === "startDate") {
+        setDateError("");
+        // Si la fecha de fin es anterior a la nueva fecha de inicio, ajustarla
+        if (updated.endDate && updated.endDate < value) {
+          updated.endDate = value;
+        }
+      } else if (field === "endDate") {
+        setDateError("");
+        // Si la fecha de fin es anterior a la fecha de inicio, mostrar error
+        if (updated.startDate && value < updated.startDate) {
+          setDateError("La fecha de fin no puede ser anterior a la fecha de inicio");
+          return prev; // No actualizar si hay error
+        }
+      }
+      
+      return updated;
+    });
   };
 
   const handleSubmit = async (e) => {
@@ -53,6 +82,54 @@ export default function BookingForm() {
     if (!form.startTime) {
       return alert("Por favor selecciona la hora de inicio.");
     }
+
+    // Validar que la fecha de inicio no sea en el pasado
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const startDate = new Date(form.startDate);
+    startDate.setHours(0, 0, 0, 0);
+    
+    if (startDate < today) {
+      setDateError("No puedes hacer una reserva para fechas pasadas");
+      return;
+    }
+
+    // Validar que la fecha de fin no sea anterior a la fecha de inicio
+    const endDate = new Date(form.endDate);
+    endDate.setHours(0, 0, 0, 0);
+    
+    if (endDate < startDate) {
+      setDateError("La fecha de fin no puede ser anterior a la fecha de inicio");
+      return;
+    }
+
+    // Si la fecha de inicio es hoy, validar que la hora no sea en el pasado
+    if (startDate.getTime() === today.getTime()) {
+      const now = new Date();
+      const [startHour, startMinute] = form.startTime.split(":").map(Number);
+      const startDateTime = new Date();
+      startDateTime.setHours(startHour, startMinute, 0, 0);
+      
+      if (startDateTime < now) {
+        setDateError("No puedes hacer una reserva para una hora que ya pasó hoy");
+        return;
+      }
+    }
+
+    // Si las fechas son iguales, validar que la hora de fin sea posterior a la de inicio
+    if (startDate.getTime() === endDate.getTime() && form.endTime) {
+      const [startHour, startMinute] = form.startTime.split(":").map(Number);
+      const [endHour, endMinute] = form.endTime.split(":").map(Number);
+      const startTimeMinutes = startHour * 60 + startMinute;
+      const endTimeMinutes = endHour * 60 + endMinute;
+      
+      if (endTimeMinutes <= startTimeMinutes) {
+        setDateError("La hora de fin debe ser posterior a la hora de inicio cuando las fechas son iguales");
+        return;
+      }
+    }
+
+    setDateError(""); // Limpiar errores si todo está bien
 
     setSubmitting(true);
     try {
@@ -130,6 +207,7 @@ export default function BookingForm() {
               className="mt-1 w-full border rounded px-3 py-2"
               value={form.startDate}
               onChange={handleChange("startDate")}
+              min={getTodayString()}
               required
             />
           </label>
@@ -154,6 +232,7 @@ export default function BookingForm() {
               className="mt-1 w-full border rounded px-3 py-2"
               value={form.endDate}
               onChange={handleChange("endDate")}
+              min={form.startDate || getTodayString()}
               required
             />
           </label>
@@ -168,6 +247,12 @@ export default function BookingForm() {
             />
           </label>
         </div>
+
+        {dateError && (
+          <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
+            {dateError}
+          </div>
+        )}
 
         <label className="block">
           <span className="block text-sm font-medium">Dirección de recogida / cuidado</span>
